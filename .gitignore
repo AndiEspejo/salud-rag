@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Secrets and local config — never commit credentials or tokens
+.env
+.env.*
+!.env.example
+.databrickscfg
+*.pem
+*.key
+
+# Data and model artifacts (live in Databricks / Unity Catalog, not git)
+data/
+*.xml
+*.parquet
+mlruns/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
