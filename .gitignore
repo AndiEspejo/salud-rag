@@ -21,6 +21,8 @@ data/
 *.xml
 *.parquet
 mlruns/
+# Small test fixtures excerpted from source data are versioned
+!tests/fixtures/*.xml
 
 # Editors and OS
 .vscode/
