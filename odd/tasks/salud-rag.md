@@ -44,7 +44,7 @@ from 2026-10-01.
 - [ ] **3. Databricks Academy learning pathway** — completed inside the
   Learning Festival window (ends 2026-10-14) for the 50% certification voucher.
   Owner: Andres (not code).
-- [ ] **4. Download MedlinePlus Spanish XML** — file stored in a Unity Catalog
+- [x] **4. Download MedlinePlus Spanish XML** — file stored in a Unity Catalog
   volume. Source: <https://medlineplus.gov/xml.html> publishes
   `mplus_topics_compressed_YYYY-MM-DD.zip` (~4.7 MB; English and Spanish topics
   in one XML) Tuesday–Saturday. Branch: `feat/medlineplus-download`.
@@ -61,8 +61,12 @@ from 2026-10-01.
     run against the real 2026-10-02 file (30,143,948 bytes; second run skipped;
     no `.part` left); notebook count logic gives 1016 Spanish of 2033 topics.
     Databricks runtime (volume rename, Git folder path, egress) checked in 4d.
-  - [ ] 4d. Publish the repository to GitHub and clone it as a Databricks Git
-    folder; run the notebook (Andres).
+  - [x] 4d. Publish the repository to GitHub and clone it as a Databricks Git
+    folder; run the notebook (Andres). Evidence: public repo
+    <https://github.com/AndiEspejo/salud-rag>; notebook ran on serverless
+    2026-10-03 and reported 1016 Spanish health topics, matching the local run.
+    This confirms egress to medlineplus.gov, the `../src` import from the Git
+    folder, `Path.replace` on `/Volumes`, and schema/volume creation rights.
 
 ### Weeks 3–4: data and index
 
@@ -128,4 +132,5 @@ Non-blocking findings from the 4b fix + 4c review (reliability lens):
 - **Warning:** the notebook's chunked Spanish-topic count has no committed
   test (verified once against the real file: 1016 of 2033). Superseded by
   task 5 parsing; move any reused counting into a tested function.
-- `Path.replace` on `/Volumes` may not be atomic (object storage). Check in 4d.
+- `Path.replace` on `/Volumes` may not be atomic (object storage). It works
+  (4d run succeeded); atomicity under interruption remains unverified.
