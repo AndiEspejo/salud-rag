@@ -125,3 +125,63 @@ def test_download_rejects_zip_without_exactly_one_xml(
         download_latest_topics(tmp_path, fetch=fetch, now=lambda: FIXED_NOW)
 
     assert list(tmp_path.iterdir()) == []
+
+
+def test_download_resumes_when_previous_run_left_xml_without_manifest(tmp_path: Path) -> None:
+    fetch, requested = make_fetch(make_zip({"mplus_topics_2026-10-02.xml": XML_BYTES}))
+    (tmp_path / "mplus_topics_2026-10-02.xml").write_bytes(XML_BYTES)
+
+    result = download_latest_topics(tmp_path, fetch=fetch, now=lambda: FIXED_NOW)
+
+    assert result.skipped is False
+    assert requested == [INDEX_URL, ZIP_URL]
+    assert result.xml_path.read_bytes() == XML_BYTES
+    assert json.loads(result.manifest_path.read_text(encoding="utf-8"))["source_url"] == ZIP_URL
+
+
+def test_successful_download_leaves_no_part_files(tmp_path: Path) -> None:
+    fetch, _ = make_fetch(make_zip({"mplus_topics_2026-10-02.xml": XML_BYTES}))
+
+    result = download_latest_topics(tmp_path, fetch=fetch, now=lambda: FIXED_NOW)
+
+    assert list(tmp_path.glob("*.part")) == []
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        result.manifest_path.name,
+        result.xml_path.name,
+    ]
+    json.loads(result.manifest_path.read_text(encoding="utf-8"))
+
+
+def test_interrupted_manifest_write_is_not_treated_as_complete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fetch, requested = make_fetch(make_zip({"mplus_topics_2026-10-02.xml": XML_BYTES}))
+    original_write_bytes = Path.write_bytes
+    original_write_text = Path.write_text
+
+    def crash_midway_bytes(self: Path, data: bytes) -> int:
+        if "manifest" in self.name:
+            original_write_bytes(self, data[: len(data) // 2])
+            raise OSError("simulated crash")
+        return original_write_bytes(self, data)
+
+    def crash_midway_text(self: Path, data: str, encoding: str | None = None) -> int:
+        if "manifest" in self.name:
+            original_write_text(self, data[: len(data) // 2], encoding=encoding)
+            raise OSError("simulated crash")
+        return original_write_text(self, data, encoding=encoding)
+
+    monkeypatch.setattr(Path, "write_bytes", crash_midway_bytes)
+    monkeypatch.setattr(Path, "write_text", crash_midway_text)
+    with pytest.raises(OSError, match="simulated crash"):
+        download_latest_topics(tmp_path, fetch=fetch, now=lambda: FIXED_NOW)
+    monkeypatch.undo()
+    requested.clear()
+
+    result = download_latest_topics(tmp_path, fetch=fetch, now=lambda: FIXED_NOW)
+
+    assert result.skipped is False
+    assert requested == [INDEX_URL, ZIP_URL]
+    assert json.loads(result.manifest_path.read_text(encoding="utf-8"))["size_bytes"] == len(
+        XML_BYTES
+    )

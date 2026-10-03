@@ -84,6 +84,12 @@ def _extract_single_xml(zip_bytes: bytes) -> bytes:
         return archive.read(xml_members[0])
 
 
+def _write_atomic(path: Path, data: bytes) -> None:
+    part_path = path.with_name(path.name + ".part")
+    part_path.write_bytes(data)
+    part_path.replace(path)
+
+
 def download_latest_topics(
     dest_dir: Path,
     fetch: Fetch = fetch_url,
@@ -98,9 +104,7 @@ def download_latest_topics(
     dest_dir.mkdir(parents=True, exist_ok=True)
     xml_bytes = _extract_single_xml(fetch(topics_file.url))
 
-    part_path = xml_path.with_name(xml_path.name + ".part")
-    part_path.write_bytes(xml_bytes)
-    part_path.replace(xml_path)
+    _write_atomic(xml_path, xml_bytes)
 
     manifest = {
         "source_url": topics_file.url,
@@ -113,5 +117,5 @@ def download_latest_topics(
         "attribution": ATTRIBUTION,
         "license_note": LICENSE_NOTE,
     }
-    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    _write_atomic(manifest_path, json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8"))
     return DownloadResult(topics_file, xml_path, manifest_path, skipped=False)
