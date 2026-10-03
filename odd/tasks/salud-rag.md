@@ -130,6 +130,9 @@ from 2026-10-01.
 | 4a–4b | `a1ebf00` (`feat/medlineplus-download`) | RDD review `review-acf8d1b6c0867032` approved (reliability lens); 5 non-blocking findings below |
 | 4b fix | `99a26c9` (`feat/medlineplus-download`) | Atomic manifest write; RDD review `review-a67e8f056d9cc24d` approved |
 | 4c | `4db520d` (`feat/medlineplus-download`) | Same review as 4b fix; 3 non-blocking findings below |
+| 5a | `e1d34c8` (`feat/medlineplus-parse`) | Parser; reviewed in `review-6e7d2d39ddf819be` with 5b |
+| 5b | `30deddb` (`feat/medlineplus-parse`) | Delta notebook; same review |
+| 5a–5b fix | `b3a3a75` (`feat/medlineplus-parse`) | Review warnings fixed; 31 passed, ruff clean, notebook compiles (not run in Spark yet) |
 
 ## Follow-ups
 
