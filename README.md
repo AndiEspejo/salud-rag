@@ -26,6 +26,15 @@ plan and progress.
 Health content comes from [MedlinePlus](https://medlineplus.gov/) (U.S.
 National Library of Medicine). Only public-domain material is used.
 
+## Data ingestion
+
+Clone this repository as a Databricks Git folder, open
+[`notebooks/01_download_medlineplus.py`](notebooks/01_download_medlineplus.py),
+and run all cells on serverless compute. The latest health topics XML lands in
+the Unity Catalog volume `/Volumes/workspace/salud_rag/raw/medlineplus/`, next
+to a manifest that records the source URL, file date, and SHA-256 checksum.
+Re-running skips the download when that day's file and manifest already exist.
+
 ## Development
 
 Requires [uv](https://docs.astral.sh/uv/).

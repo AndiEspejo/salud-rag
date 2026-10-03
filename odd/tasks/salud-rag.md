@@ -55,9 +55,12 @@ from 2026-10-01.
     library only; network injected so tests run offline. Evidence: test-first
     in five RED→GREEN cycles; independent check 8 passed, ruff clean, no new
     dependencies. `fetch_url` (real network) is not unit-tested; covered by 4d.
-  - [ ] 4c. Databricks notebook `notebooks/01_download_medlineplus.py` creates
+  - [x] 4c. Databricks notebook `notebooks/01_download_medlineplus.py` creates
     schema `workspace.salud_rag` and volume `raw`, then stores the file under
-    `/Volumes/workspace/salud_rag/raw/medlineplus/`.
+    `/Volumes/workspace/salud_rag/raw/medlineplus/`. Evidence: local end-to-end
+    run against the real 2026-10-02 file (30,143,948 bytes; second run skipped;
+    no `.part` left); notebook count logic gives 1016 Spanish of 2033 topics.
+    Databricks runtime (volume rename, Git folder path, egress) checked in 4d.
   - [ ] 4d. Publish the repository to GitHub and clone it as a Databricks Git
     folder; run the notebook (Andres).
 
@@ -103,3 +106,16 @@ from 2026-10-01.
 |---|---|---|
 | 1 | — | Notebook-only; no repository change |
 | 2 | `909033e` (`feat/project-bootstrap`) | `feat: bootstrap Python project with health endpoint` |
+| 4a–4b | `3e1f8cd` (`feat/medlineplus-download`) | RDD review `review-acf8d1b6c0867032` approved (reliability lens); 5 non-blocking findings below |
+
+## Follow-ups
+
+Non-blocking findings from the 4a–4b review (reliability lens):
+
+- ~~**Warning:** manifest is written non-atomically.~~ Fixed: manifest now
+  goes through `.part` + replace; interrupted-write test added.
+- A corrupt zip raises `zipfile.BadZipFile`, not a clear `ValueError`.
+- A malformed date in a matching link aborts the whole parse.
+- `dest_dir` is created before the zip is validated (test asserts emptiness of
+  an existing directory).
+- Partial state (XML without manifest) is not covered by a test.
