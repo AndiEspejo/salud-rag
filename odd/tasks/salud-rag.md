@@ -105,10 +105,10 @@ from 2026-10-01.
 | Task | Commit | Notes |
 |---|---|---|
 | 1 | — | Notebook-only; no repository change |
-| 2 | `909033e` (`feat/project-bootstrap`) | `feat: bootstrap Python project with health endpoint` |
-| 4a–4b | `3e1f8cd` (`feat/medlineplus-download`) | RDD review `review-acf8d1b6c0867032` approved (reliability lens); 5 non-blocking findings below |
-| 4b fix | `e4138bc` (`feat/medlineplus-download`) | Atomic manifest write; RDD review `review-a67e8f056d9cc24d` approved |
-| 4c | `d53c553` (`feat/medlineplus-download`) | Same review as 4b fix; 3 non-blocking findings below |
+| 2 | `baa641a` (`feat/project-bootstrap`) | `feat: bootstrap Python project with health endpoint` |
+| 4a–4b | `a1ebf00` (`feat/medlineplus-download`) | RDD review `review-acf8d1b6c0867032` approved (reliability lens); 5 non-blocking findings below |
+| 4b fix | `99a26c9` (`feat/medlineplus-download`) | Atomic manifest write; RDD review `review-a67e8f056d9cc24d` approved |
+| 4c | `4db520d` (`feat/medlineplus-download`) | Same review as 4b fix; 3 non-blocking findings below |
 
 ## Follow-ups
 
@@ -121,7 +121,7 @@ Non-blocking findings from the 4a–4b review (reliability lens):
 - `dest_dir` is created before the zip is validated (test asserts emptiness of
   an existing directory).
 - ~~Partial state (XML without manifest) is not covered by a test.~~ Covered
-  in `e4138bc`.
+  in `99a26c9`.
 
 Non-blocking findings from the 4b fix + 4c review (reliability lens):
 
