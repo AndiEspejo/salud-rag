@@ -71,7 +71,24 @@ from 2026-10-01.
 ### Weeks 3–4: data and index
 
 - [ ] **5. Parse XML into a Delta table** — URL, date, language, and license per
-  document; copyrighted content filtered out.
+  document; copyrighted content filtered out. Branch: `feat/medlineplus-parse`.
+  Findings (2026-10-02 file): 2033 topics (1016 Spanish, 1013 with a
+  summary); summaries are MedlinePlus-authored HTML (median 1,350 plain-text
+  chars, max 8,201) with no A.D.A.M./ASHP text; every Spanish topic maps to an
+  English one. Decisions: store both languages (index Spanish only); drop
+  third-party `site` records; keep summary HTML and plain text; overwrite the
+  table per run (Delta time travel keeps history).
+  - [x] 5a. Parser in `src/` (stdlib only): topic metadata, synonyms, groups,
+    related topics, mapped topic, summary HTML and plain text (lists kept as
+    lines); topics without a summary reported, not stored. Tested on a small
+    XML fixture. Evidence: test-first (26 passed, ruff clean); real file gives
+    2,028 topics (1,013 Spanish, 1,015 English), 5 skipped without summary
+    (3174, 3181, 3182, 1724, 2245), ~34 MB peak memory.
+  - [x] 5b. Notebook `notebooks/02_parse_medlineplus.py` writes
+    `workspace.salud_rag.medlineplus_topics` with lineage (file date,
+    SHA-256, source URL), license, and attribution per row, plus sanity checks.
+    Spark behavior (types, table comment, history) is checked in 5c.
+  - [ ] 5c. Run the notebook in Databricks (Andres); record row counts.
 - [ ] **6. Chunking v1 (fixed size)** — versioned chunk table in Delta.
 - [ ] **7. Embeddings and vector index** — query returns relevant chunks.
 - [ ] **8. Minimal RAG pipeline** — retrieve, generate with citation; 10 test
@@ -134,3 +151,8 @@ Non-blocking findings from the 4b fix + 4c review (reliability lens):
   task 5 parsing; move any reused counting into a tested function.
 - `Path.replace` on `/Volumes` may not be atomic (object storage). It works
   (4d run succeeded); atomicity under interruption remains unverified.
+
+Task 5 notes:
+
+- Topic 5543 (Spanish) keeps a literal `</li>` in `summary_text`: the source
+  XML is double-escaped and malformed there. Revisit if it hurts chunking.

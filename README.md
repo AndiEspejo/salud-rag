@@ -35,6 +35,14 @@ the Unity Catalog volume `/Volumes/workspace/salud_rag/raw/medlineplus/`, next
 to a manifest that records the source URL, file date, and SHA-256 checksum.
 Re-running skips the download when that day's file and manifest already exist.
 
+Then run [`notebooks/02_parse_medlineplus.py`](notebooks/02_parse_medlineplus.py).
+It parses the latest XML into the Delta table
+`workspace.salud_rag.medlineplus_topics`, one row per health topic. Both Spanish
+and English topics are stored; Spanish is the language used for retrieval. Only
+MedlinePlus-authored summaries are kept (as HTML and plain text); third-party
+site links are dropped. Lineage columns (source URL and file, file date, SHA-256,
+license, attribution, ingestion time) trace every row back to its download.
+
 ## Development
 
 Requires [uv](https://docs.astral.sh/uv/).
