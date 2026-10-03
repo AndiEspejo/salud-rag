@@ -132,7 +132,7 @@ from 2026-10-01.
 | 4c | `4db520d` (`feat/medlineplus-download`) | Same review as 4b fix; 3 non-blocking findings below |
 | 5a | `e1d34c8` (`feat/medlineplus-parse`) | Parser; reviewed in `review-6e7d2d39ddf819be` with 5b |
 | 5b | `30deddb` (`feat/medlineplus-parse`) | Delta notebook; same review |
-| 5a–5b fix | `b3a3a75` (`feat/medlineplus-parse`) | Review warnings fixed; 31 passed, ruff clean, notebook compiles (not run in Spark yet) |
+| 5a–5b fix | `b3a3a75` (`feat/medlineplus-parse`) | Review warnings fixed; 31 passed, ruff clean, notebook compiles (not run in Spark yet); RDD review `review-7be8345a16320dfe` approved (reliability lens), 2 non-blocking findings below |
 
 ## Follow-ups
 
@@ -164,3 +164,9 @@ Task 5 notes:
   on the 2026-10-02 file, where every `<li>` is closed); notebook verifies the
   XML SHA-256 against the manifest; validation runs before the table is
   overwritten; table comment escapes quotes.
+- Review `review-7be8345a16320dfe` (fix commit `b3a3a75`) non-blocking findings:
+  - **Warning:** the notebook's pre-write validation is not proven by a test
+    (notebook lines 127–140). The 5c run exercises it once; consider moving it into a tested
+    function.
+  - `verify_manifest_sha256` relies on the `xml_filename` and `sha256` manifest
+    keys without a test for a missing key.
