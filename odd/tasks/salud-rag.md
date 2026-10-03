@@ -88,4 +88,4 @@ from 2026-10-01.
 | Task | Commit | Notes |
 |---|---|---|
 | 1 | — | Notebook-only; no repository change |
-| 2 | see `git log` on `feat/project-bootstrap` | `feat: bootstrap Python project with health endpoint` |
+| 2 | `909033e` (`feat/project-bootstrap`) | `feat: bootstrap Python project with health endpoint` |
