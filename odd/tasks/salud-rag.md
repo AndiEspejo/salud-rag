@@ -45,7 +45,21 @@ from 2026-10-01.
   Learning Festival window (ends 2026-10-14) for the 50% certification voucher.
   Owner: Andres (not code).
 - [ ] **4. Download MedlinePlus Spanish XML** — file stored in a Unity Catalog
-  volume.
+  volume. Source: <https://medlineplus.gov/xml.html> publishes
+  `mplus_topics_compressed_YYYY-MM-DD.zip` (~4.7 MB; English and Spanish topics
+  in one XML) Tuesday–Saturday. Branch: `feat/medlineplus-download`.
+  - [x] 4a. Find the latest compressed topics file from the index page (pure
+    function, tested against a saved HTML fixture).
+  - [x] 4b. Download, extract the XML, and write a manifest (source URL, file
+    date, SHA-256, size, download time); skip if already present. Standard
+    library only; network injected so tests run offline. Evidence: test-first
+    in five RED→GREEN cycles; independent check 8 passed, ruff clean, no new
+    dependencies. `fetch_url` (real network) is not unit-tested; covered by 4d.
+  - [ ] 4c. Databricks notebook `notebooks/01_download_medlineplus.py` creates
+    schema `workspace.salud_rag` and volume `raw`, then stores the file under
+    `/Volumes/workspace/salud_rag/raw/medlineplus/`.
+  - [ ] 4d. Publish the repository to GitHub and clone it as a Databricks Git
+    folder; run the notebook (Andres).
 
 ### Weeks 3–4: data and index
 
