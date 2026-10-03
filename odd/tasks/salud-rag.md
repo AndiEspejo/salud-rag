@@ -107,6 +107,8 @@ from 2026-10-01.
 | 1 | — | Notebook-only; no repository change |
 | 2 | `909033e` (`feat/project-bootstrap`) | `feat: bootstrap Python project with health endpoint` |
 | 4a–4b | `3e1f8cd` (`feat/medlineplus-download`) | RDD review `review-acf8d1b6c0867032` approved (reliability lens); 5 non-blocking findings below |
+| 4b fix | `e4138bc` (`feat/medlineplus-download`) | Atomic manifest write; RDD review `review-a67e8f056d9cc24d` approved |
+| 4c | `d53c553` (`feat/medlineplus-download`) | Same review as 4b fix; 3 non-blocking findings below |
 
 ## Follow-ups
 
@@ -118,4 +120,12 @@ Non-blocking findings from the 4a–4b review (reliability lens):
 - A malformed date in a matching link aborts the whole parse.
 - `dest_dir` is created before the zip is validated (test asserts emptiness of
   an existing directory).
-- Partial state (XML without manifest) is not covered by a test.
+- ~~Partial state (XML without manifest) is not covered by a test.~~ Covered
+  in `e4138bc`.
+
+Non-blocking findings from the 4b fix + 4c review (reliability lens):
+
+- **Warning:** the notebook's chunked Spanish-topic count has no committed
+  test (verified once against the real file: 1016 of 2033). Superseded by
+  task 5 parsing; move any reused counting into a tested function.
+- `Path.replace` on `/Volumes` may not be atomic (object storage). Check in 4d.
