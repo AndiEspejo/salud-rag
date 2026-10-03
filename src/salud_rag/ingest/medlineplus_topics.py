@@ -1,6 +1,7 @@
 """Parse the MedlinePlus health topics XML into plain records."""
 
 import datetime
+import hashlib
 import json
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -75,7 +76,8 @@ class _TextExtractor(HTMLParser):
             self._list_depth += 1
         elif tag == "li":
             self._end_line()
-            self._list_item_depth += 1
+            # `</li>` is optional in HTML, so an `<li>` never nests deeper than its list.
+            self._list_item_depth = min(self._list_item_depth + 1, max(self._list_depth, 1))
         elif tag == "br":
             self._end_line()
 
@@ -85,6 +87,8 @@ class _TextExtractor(HTMLParser):
         elif tag in _LIST_TAGS:
             self._end_line()
             self._list_depth = max(self._list_depth - 1, 0)
+            # Closing a list implicitly closes any `<li>` left open inside it.
+            self._list_item_depth = min(self._list_item_depth, self._list_depth)
             if not self._list_depth:
                 self._end_paragraph()
         elif tag == "li":
@@ -163,3 +167,23 @@ def find_latest_manifest(dest_dir: Path) -> dict:
     if not xml_path.exists():
         raise FileNotFoundError(f"Manifest names {xml_path.name} but it is missing in {dest_dir}")
     return latest
+
+
+def file_sha256(path: Path, chunk_size: int = 1 << 20) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(chunk_size):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_manifest_sha256(manifest: dict, raw_dir: Path) -> Path:
+    xml_path = raw_dir / manifest["xml_filename"]
+    expected = manifest["sha256"]
+    actual = file_sha256(xml_path)
+    if actual != expected:
+        raise ValueError(
+            f"SHA-256 mismatch for {xml_path.name}: "
+            f"manifest {expected[:12]}..., file {actual[:12]}..."
+        )
+    return xml_path

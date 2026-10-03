@@ -156,3 +156,8 @@ Task 5 notes:
 
 - Topic 5543 (Spanish) keeps a literal `</li>` in `summary_text`: the source
   XML is double-escaped and malformed there. Revisit if it hurts chunking.
+- Review `review-6e7d2d39ddf819be` (5a–5b) warnings fixed before the first
+  Databricks run: list-item depth no longer leaks past a closed list (no change
+  on the 2026-10-02 file, where every `<li>` is closed); notebook verifies the
+  XML SHA-256 against the manifest; validation runs before the table is
+  overwritten; table comment escapes quotes.

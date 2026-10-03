@@ -1,11 +1,18 @@
 import datetime
+import hashlib
 import io
 import json
 from pathlib import Path
 
 import pytest
 
-from salud_rag.ingest.medlineplus_topics import find_latest_manifest, html_to_text, parse_topics
+from salud_rag.ingest.medlineplus_topics import (
+    file_sha256,
+    find_latest_manifest,
+    html_to_text,
+    parse_topics,
+    verify_manifest_sha256,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "medlineplus_topics_sample.xml"
 
@@ -127,6 +134,16 @@ def test_html_to_text_keeps_nested_list_items_contiguous():
     assert html_to_text(html) == "- Outer:\n- Inner one\n- Inner two\n- Next"
 
 
+def test_html_to_text_unclosed_list_items_do_not_leak_into_later_paragraphs():
+    assert html_to_text("<ul><li>a<li>b</ul><p>c</p>") == "- a\n- b\n\nc"
+
+
+def test_html_to_text_unclosed_nested_list_item_does_not_leak_after_the_list():
+    text = html_to_text("<ul><li>x<ul><li>y</ul></li></ul><p>z</p>")
+
+    assert text.splitlines() == ["- x", "- y", "", "z"]
+
+
 def test_real_fixture_summaries_contain_no_markup():
     for topic in parse_topics(FIXTURE).topics:
         assert "<" not in topic.summary_text
@@ -165,3 +182,36 @@ def test_find_latest_manifest_raises_when_the_xml_is_missing(tmp_path):
 
     with pytest.raises(FileNotFoundError, match="mplus_topics_2026-10-02.xml"):
         find_latest_manifest(tmp_path)
+
+
+def test_file_sha256_matches_hashlib_across_chunk_sizes(tmp_path):
+    path = tmp_path / "data.bin"
+    path.write_bytes(b"salud" * 1000)
+
+    expected = hashlib.sha256(b"salud" * 1000).hexdigest()
+    assert file_sha256(path) == expected
+    assert file_sha256(path, chunk_size=7) == expected
+
+
+def test_verify_manifest_sha256_returns_the_xml_path_when_the_hash_matches(tmp_path):
+    xml = tmp_path / "mplus_topics_2026-10-02.xml"
+    xml.write_bytes(b"<health-topics/>")
+    manifest = {
+        "xml_filename": xml.name,
+        "sha256": hashlib.sha256(b"<health-topics/>").hexdigest(),
+    }
+
+    assert verify_manifest_sha256(manifest, tmp_path) == xml
+
+
+def test_verify_manifest_sha256_raises_when_the_file_was_tampered_with(tmp_path):
+    xml = tmp_path / "mplus_topics_2026-10-02.xml"
+    xml.write_bytes(b"<health-topics/>")
+    manifest = {
+        "xml_filename": xml.name,
+        "sha256": hashlib.sha256(b"<health-topics/>").hexdigest(),
+    }
+    xml.write_bytes(b"<health-topics>tampered</health-topics>")
+
+    with pytest.raises(ValueError, match="SHA-256 mismatch"):
+        verify_manifest_sha256(manifest, tmp_path)

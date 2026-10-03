@@ -41,12 +41,18 @@ from pyspark.sql.types import (
 sys.path.insert(0, os.path.abspath("../src"))
 
 from salud_rag.ingest.medlineplus import ATTRIBUTION
-from salud_rag.ingest.medlineplus_topics import LICENSE, find_latest_manifest, parse_topics
+from salud_rag.ingest.medlineplus_topics import (
+    LICENSE,
+    find_latest_manifest,
+    parse_topics,
+    verify_manifest_sha256,
+)
 
 # COMMAND ----------
 
 manifest = find_latest_manifest(Path(RAW_DIR))
-result = parse_topics(Path(RAW_DIR) / manifest["xml_filename"])
+xml_path = verify_manifest_sha256(manifest, Path(RAW_DIR))  # raises if the file was altered
+result = parse_topics(xml_path)
 
 print(f"Source file: {manifest['xml_filename']} (file date {manifest['file_date']})")
 print(f"Parsed topics: {len(result.topics)}")
@@ -119,27 +125,38 @@ df = spark.createDataFrame(rows, schema=SCHEMA_DEF)  # pyright: ignore[reportUnd
 
 # COMMAND ----------
 
+# Validate before writing, so bad data never replaces the existing good table.
+topic_ids = [row["topic_id"] for row in rows]
+spanish_count = sum(1 for row in rows if row["language"] == "Spanish")
+
+if not rows or len(rows) != len(result.topics):
+    raise ValueError(f"Expected {len(result.topics)} non-empty rows, got {len(rows)}")
+if len(set(topic_ids)) != len(topic_ids):
+    raise ValueError("Duplicate topic_id")
+if any(not row["summary_text"].strip() for row in rows):
+    raise ValueError("Found empty summary_text")
+if spanish_count <= 1000:
+    raise ValueError(f"Expected more than 1000 Spanish topics, got {spanish_count}")
+if df.count() != len(result.topics):
+    raise ValueError("DataFrame row count differs from parsed topics")
+
+# COMMAND ----------
+
 df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(TABLE)
 
-spark.sql(  # pyright: ignore[reportUndefinedVariable]
-    f"COMMENT ON TABLE {TABLE} IS "
-    f"'MedlinePlus health topics (Spanish and English), one row per topic with the summary as "
+table_comment = (
+    "MedlinePlus health topics (Spanish and English), one row per topic with the summary as "
     f"HTML and plain text. {ATTRIBUTION}. Third-party site links are not stored. "
-    f"Not medical advice.'"
+    "Not medical advice."
 )
+escaped_comment = table_comment.replace("\\", "\\\\").replace("'", "\\'")  # Databricks SQL
+spark.sql(f"COMMENT ON TABLE {TABLE} IS '{escaped_comment}'")  # pyright: ignore[reportUndefinedVariable]
 
 # COMMAND ----------
 
 stored = spark.table(TABLE)  # pyright: ignore[reportUndefinedVariable]
 
-assert stored.count() == len(result.topics), "Row count differs from parsed topics"
-assert stored.select("topic_id").distinct().count() == len(result.topics), "Duplicate topic_id"
-assert stored.filter("summary_text IS NULL OR trim(summary_text) = ''").count() == 0, (
-    "Found empty summary_text"
-)
-assert stored.filter("language = 'Spanish'").count() > 1000, (
-    "Expected more than 1000 Spanish topics"
-)
+assert stored.count() == len(rows), "Stored row count differs from the rows written"
 
 display(stored.select("topic_id", "language", "title", "url").limit(5))  # pyright: ignore[reportUndefinedVariable]
 
