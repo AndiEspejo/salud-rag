@@ -70,7 +70,7 @@ from 2026-10-01.
 
 ### Weeks 3–4: data and index
 
-- [ ] **5. Parse XML into a Delta table** — URL, date, language, and license per
+- [x] **5. Parse XML into a Delta table** — URL, date, language, and license per
   document; copyrighted content filtered out. Branch: `feat/medlineplus-parse`.
   Findings (2026-10-02 file): 2033 topics (1016 Spanish, 1013 with a
   summary); summaries are MedlinePlus-authored HTML (median 1,350 plain-text
@@ -88,7 +88,14 @@ from 2026-10-01.
     `workspace.salud_rag.medlineplus_topics` with lineage (file date,
     SHA-256, source URL), license, and attribution per row, plus sanity checks.
     Spark behavior (types, table comment, history) is checked in 5c.
-  - [ ] 5c. Run the notebook in Databricks (Andres); record row counts.
+  - [x] 5c. Run the notebook in Databricks (Andres); record row counts.
+    Evidence: serverless run on `mplus_topics_2026-10-02.xml` (file date
+    2026-10-02) parsed 2,028 topics (1,013 Spanish, 1,015 English) and skipped
+    the same 5 topics without a full summary (3174, 3181, 3182, 1724, 2245),
+    matching the local run. SHA-256 check, pre-write validation, and the
+    stored-count assertion all passed; the table preview showed Spanish rows
+    with MedlinePlus URLs. `DESCRIBE HISTORY` reported latest Delta version 3
+    (each run commits the overwrite and the table comment as separate versions).
 - [ ] **6. Chunking v1 (fixed size)** — versioned chunk table in Delta.
 - [ ] **7. Embeddings and vector index** — query returns relevant chunks.
 - [ ] **8. Minimal RAG pipeline** — retrieve, generate with citation; 10 test
@@ -166,7 +173,7 @@ Task 5 notes:
   overwritten; table comment escapes quotes.
 - Review `review-7be8345a16320dfe` (fix commit `b3a3a75`) non-blocking findings:
   - **Warning:** the notebook's pre-write validation is not proven by a test
-    (notebook lines 127–140). The 5c run exercises it once; consider moving it into a tested
+    (notebook lines 127–140). The 5c run exercised it once (passed); consider moving it into a tested
     function.
   - `verify_manifest_sha256` relies on the `xml_filename` and `sha256` manifest
     keys without a test for a missing key.
